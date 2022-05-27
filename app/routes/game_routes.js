@@ -12,7 +12,7 @@ const requireToken = passport.authenticate('bearer', { session: false })
 // INDEX
 // GET /games
 router.get('/games', requireToken, (req, res, next) => {
-  Game.find()
+  Game.find({owner: req.user.id})
     .then(games => res.json({ games: games }))
     .catch(next)
 })
@@ -33,7 +33,8 @@ router.get('/games', requireToken, (req, res, next) => {
 // CREATE
 // POST / game /
 router.post('/games', requireToken, (req, res, next) => {
-  const gameData = req.body.game
+  // const gameData = req.body.game
+  const gameData = {owner: req.user.id, name: req.body.name, released: req.body.released, image: req.body.background_image, id: req.body.id}
   Game.create(gameData)
     .then(game => res.status(201).json({game: game}))
     .catch(next)
@@ -53,7 +54,7 @@ router.post('/games', requireToken, (req, res, next) => {
 
 // DESTROY
 // DELETE /game/:id
-router.delete('/library', (req, res, next) => {
+router.delete('/library', requireToken, (req, res, next) => {
   const id = req.params.id
   Game.findById(id)
     // .then(handle404)
