@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-// require restaurant model
+// require game model
 const Game = require('../models/games')
 // const handle404 = require('./../lib/custom_errors')
 
@@ -11,7 +11,7 @@ const requireToken = passport.authenticate('bearer', { session: false })
 
 // INDEX
 // GET /games
-router.get('/games', requireToken, (req, res, next) => {
+router.get('/library', requireToken, (req, res, next) => {
   Game.find({owner: req.user.id})
     .then(games => res.json({ games: games }))
     .catch(next)
@@ -32,9 +32,17 @@ router.get('/games', requireToken, (req, res, next) => {
 
 // CREATE
 // POST / game /
-router.post('/games', requireToken, (req, res, next) => {
+router.post('/library', requireToken, (req, res, next) => {
   // const gameData = req.body.game
-  const gameData = {owner: req.user.id, name: req.body.name, released: req.body.released, image: req.body.background_image, id: req.body.id}
+  const gameData = {
+    owner: req.user.id,
+    name: req.body.name,
+    released: req.body.released,
+    image: req.body.background_image,
+    id: req.body.id,
+    inLibrary: true,
+    type: 'wishlist'
+  }
   Game.create(gameData)
     .then(game => res.status(201).json({game: game}))
     .catch(next)
@@ -42,23 +50,33 @@ router.post('/games', requireToken, (req, res, next) => {
 
 // UPDATE
 // PATCH /game/:id
-// router.patch('/game/:id', (req, res, next) => {
-//   const id = req.params.id
-//   const restaurantData = req.body.restaurant
-//   Restaurant.findById(id)
-//     .then(handle404)
-//     .then(restaurant => restaurant.updateOne(restaurantData))
-//     .then(() => res.sendStatus(204))
-//     .catch(next)
-// })
+router.patch('/library', requireToken, (req, res, next) => {
+  const id = req.user.id
+  // const gameData = req.body.game
+  const gameData = {
+    owner: req.user.id,
+    type: req.body.type
+  }
+  Game.findById(id)
+    // .then(handle404)
+    .then(game => game.updateOne(gameData))
+    .then(() => res.sendStatus(204))
+    .catch(next)
+})
 
 // DESTROY
 // DELETE /game/:id
 router.delete('/library', requireToken, (req, res, next) => {
-  const id = req.params.id
+  const id = req.user.id
+  const gameData = {
+    owner: req.user.id,
+    type: req.body.type,
+    inLibrary: false
+  }
   Game.findById(id)
-    // .then(handle404)
-    .then(game => game.deleteOne())
+  // .then(handle404)
+    .then((game) => game.updateOne(gameData))
+    .then((game) => game.deleteOne())
     .then(() => res.sendStatus(204))
     .catch(next)
 })
